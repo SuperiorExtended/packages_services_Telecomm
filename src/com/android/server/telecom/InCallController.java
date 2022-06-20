@@ -1315,7 +1315,8 @@ public class InCallController extends CallsManagerListenerBase implements
         boolean vibrateOnDisconnect = Settings.System.getIntForUser(mContext.getContentResolver(),
             Settings.System.VIBRATE_ON_DISCONNECT, 0, UserHandle.USER_CURRENT) == 1;
 
-        if (oldState == CallState.DIALING && newState == CallState.ACTIVE && vibrateOnConnect) {
+        if ((oldState == CallState.ANSWERED || oldState == CallState.DIALING) &&
+                newState == CallState.ACTIVE && vibrateOnConnect) {
             performHapticFeedback(VibrationEffect.get(VibrationEffect.EFFECT_CLICK));
         } else if (oldState == CallState.ACTIVE && newState == CallState.DISCONNECTED
                 && vibrateOnDisconnect) {
