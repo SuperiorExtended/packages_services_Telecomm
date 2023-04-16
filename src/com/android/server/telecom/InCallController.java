@@ -51,6 +51,7 @@ import android.os.RemoteException;
 import android.os.Trace;
 import android.os.UserHandle;
 import android.os.UserManager;
+import android.os.VibrationAttributes;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.Settings;
@@ -1310,16 +1311,13 @@ public class InCallController extends CallsManagerListenerBase implements
     @Override
     public void onCallStateChanged(Call call, int oldState, int newState) {
         maybeTrackMicrophoneUse(isMuted());
-        boolean vibrateOnConnect = Settings.System.getIntForUser(mContext.getContentResolver(),
+        boolean shouldVibrate = Settings.System.getIntForUser(mContext.getContentResolver(),
             Settings.System.VIBRATE_ON_CONNECT, 0, UserHandle.USER_CURRENT) == 1;
-        boolean vibrateOnDisconnect = Settings.System.getIntForUser(mContext.getContentResolver(),
-            Settings.System.VIBRATE_ON_DISCONNECT, 0, UserHandle.USER_CURRENT) == 1;
-
         if ((oldState == CallState.ANSWERED || oldState == CallState.DIALING) &&
-                newState == CallState.ACTIVE && vibrateOnConnect) {
+                newState == CallState.ACTIVE && shouldVibrate) {
             performHapticFeedback(VibrationEffect.get(VibrationEffect.EFFECT_CLICK));
         } else if (oldState == CallState.ACTIVE && newState == CallState.DISCONNECTED
-                && vibrateOnDisconnect) {
+                && shouldVibrate) {
             performHapticFeedback(VibrationEffect.get(VibrationEffect.EFFECT_DOUBLE_CLICK));
         }
         updateCall(call);
@@ -2418,7 +2416,8 @@ public class InCallController extends CallsManagerListenerBase implements
 
     public void performHapticFeedback(VibrationEffect effect) {
         if (mVibrator.hasVibrator() && mVibrator != null) {
-            mVibrator.vibrate(effect);
+            mVibrator.vibrate(effect,
+                VibrationAttributes.createForUsage(VibrationAttributes.USAGE_ACCESSIBILITY));
         }
     }
 }
