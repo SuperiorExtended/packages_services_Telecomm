@@ -51,6 +51,7 @@ import android.os.RemoteException;
 import android.os.Trace;
 import android.os.UserHandle;
 import android.os.UserManager;
+import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.Settings;
 import android.telecom.CallAudioState;
@@ -94,6 +95,9 @@ public class InCallController extends CallsManagerListenerBase implements
         AppOpsManager.OnOpActiveChangedListener {
     public static final String NOTIFICATION_TAG = InCallController.class.getSimpleName();
     public static final int IN_CALL_SERVICE_NOTIFICATION_ID = 3;
+
+    private Vibrator mVibrator;
+
     public class InCallServiceConnection {
         /**
          * Indicates that a call to {@link #connect(Call)} has succeeded and resulted in a
@@ -1312,10 +1316,10 @@ public class InCallController extends CallsManagerListenerBase implements
             Settings.System.VIBRATE_ON_DISCONNECT, 0, UserHandle.USER_CURRENT) == 1;
 
         if (oldState == CallState.DIALING && newState == CallState.ACTIVE && vibrateOnConnect) {
-            vibrate(100, 200, 0);
+            performHapticFeedback(VibrationEffect.get(VibrationEffect.EFFECT_CLICK));
         } else if (oldState == CallState.ACTIVE && newState == CallState.DISCONNECTED
                 && vibrateOnDisconnect) {
-            vibrate(50, 100, 50);
+            performHapticFeedback(VibrationEffect.get(VibrationEffect.EFFECT_DOUBLE_CLICK));
         }
         updateCall(call);
     }
@@ -1594,6 +1598,9 @@ public class InCallController extends CallsManagerListenerBase implements
         }
 
         mInCallServiceConnection.chooseInitialInCallService(shouldUseCarModeUI());
+        if (mVibrator == null) {
+            mVibrator = (Vibrator) mContext.getSystemService(Context.VIBRATOR_SERVICE);
+        }
 
         // Actually try binding to the UI InCallService.
         if (mInCallServiceConnection.connect(call) ==
@@ -2406,5 +2413,11 @@ public class InCallController extends CallsManagerListenerBase implements
         boolean hasUi = type == IN_CALL_SERVICE_TYPE_CAR_MODE_UI
                 || type == IN_CALL_SERVICE_TYPE_DEFAULT_DIALER_UI;
         call.maybeOnInCallServiceTrackingChanged(isAdd, hasUi);
+    }
+
+    public void performHapticFeedback(VibrationEffect effect) {
+        if (mVibrator.hasVibrator() && mVibrator != null) {
+            mVibrator.vibrate(effect);
+        }
     }
 }
